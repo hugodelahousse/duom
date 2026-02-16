@@ -372,10 +372,12 @@ html, body, #root {
   cursor: pointer;
   transition: background 0.25s, border-color 0.25s, transform 0.15s;
 
-  &:hover:not(:disabled) {
-    background: rgba(245, 240, 232, 0.08);
-    border-color: rgba(245, 240, 232, 0.25);
-    transform: translateX(4px);
+  @media (hover: hover) {
+    &:hover:not(:disabled) {
+      background: rgba(245, 240, 232, 0.08);
+      border-color: rgba(245, 240, 232, 0.25);
+      transform: translateX(4px);
+    }
   }
 
   &:disabled { cursor: default; }
