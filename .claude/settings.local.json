@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:snidgetseeker.gitlab.io)",
+      "WebFetch(domain:motion.dev)",
+      "WebFetch(domain:github.com)",
+      "Bash(bun create:*)",
+      "Bash(bun install:*)",
+      "Bash(bun add:*)",
+      "Bash(bun run build:*)",
+      "Bash(lsof:*)",
+      "WebFetch(domain:animations.dev)",
+      "WebFetch(domain:emilkowal.ski)",
+      "WebFetch(domain:developer.chrome.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:www.joshwcomeau.com)",
+      "WebFetch(domain:blog.css-weekly.com)",
+      "WebFetch(domain:modern-css.com)",
+      "WebFetch(domain:css-weekly.com)",
+      "WebFetch(domain:douiri.org)",
+      "Bash(node -e:*)",
+      "Bash(node:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(bun test:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite build:*)"
+    ]
+  }
+}
