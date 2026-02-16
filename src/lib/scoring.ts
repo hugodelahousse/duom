@@ -4,12 +4,12 @@ import type {
 } from './types';
 
 const CHARACTERS: CharacterProfile[] = [
-  { id: 'ewilan', name: "Ewilan Gil'Sayan", V: 0.85, C: 0.85, P: 0.85, integration: 0.95, archKey: 'archDessinateurParfait', descKey: 'charEwilan' },
-  { id: 'silafian', name: "Empereur Sil'Afian", V: 0.9, C: 0.2, P: 0.5, integration: 0.5, archKey: 'archCommandeur', descKey: 'charSilAfian' },
-  { id: 'edwin', name: "Edwin Til'Illan", V: 0.65, C: 0.55, P: 0.5, integration: 0.3, archKey: 'archGuerrier', descKey: 'charEdwin' },
-  { id: 'sentinelles', name: "Élicia & Altan Gil'Sayan", V: 0.7, C: 0.7, P: 0.7, integration: 0.85, archKey: 'archSentinelle', descKey: 'charSentinelles' },
-  { id: 'bjorn', name: "Bjorn Wil'Wayard", V: 0.2, C: 0.25, P: 0.2, integration: 0.15, archKey: 'archDonEmbryonnaire', descKey: 'charBjorn' },
-  { id: 'illian', name: 'Illian', V: 0.9, C: 0.15, P: 0.35, integration: 0.25, archKey: 'archPsychokineticien', descKey: 'charIllian' },
+  { id: 'ewilan', name: "Ewilan Gil'Sayan", V: 0.35, C: 0.55, P: 0.37, integration: 0.97, archKey: 'archDessinateurParfait', descKey: 'charEwilan' },
+  { id: 'silafian', name: "Empereur Sil'Afian", V: 0.85, C: 0.20, P: 0.30, integration: 0.10, archKey: 'archCommandeur', descKey: 'charSilAfian' },
+  { id: 'edwin', name: "Edwin Til'Illan", V: 0.55, C: 0.40, P: 0.45, integration: 0.35, archKey: 'archGuerrier', descKey: 'charEdwin' },
+  { id: 'sentinelles', name: "Élicia & Altan Gil'Sayan", V: 0.55, C: 0.47, P: 0.45, integration: 0.70, archKey: 'archSentinelle', descKey: 'charSentinelles' },
+  { id: 'bjorn', name: "Bjorn Wil'Wayard", V: 0.30, C: 0.35, P: 0.35, integration: 0.20, archKey: 'archDonEmbryonnaire', descKey: 'charBjorn' },
+  { id: 'illian', name: 'Illian', V: 0.95, C: 0.12, P: 0.28, integration: 0.05, archKey: 'archPsychokineticien', descKey: 'charIllian' },
 ];
 
 function clamp(val: number, min: number, max: number): number {
@@ -106,47 +106,47 @@ export function determineArchetype(norm: NormalizedScores): Archetype {
   const avg = (V + C + P) / 3;
 
   // Perfect integration: balanced V/C/P + very high integration
-  if (range < 0.15 && integration > 0.85 && avg > 0.6) {
+  if (range < 0.25 && integration > 0.85) {
     return { key: 'archDessinateurParfait', descKey: 'descDessinateurParfait' };
   }
   // Sentinelle: balanced V/C/P + high integration
-  if (range < 0.2 && integration > 0.65 && avg > 0.5) {
+  if (range < 0.25 && integration > 0.6) {
     return { key: 'archSentinelle', descKey: 'descSentinelle' };
   }
   // Well-rounded: balanced V/C/P + moderate integration
-  if (range < 0.25 && integration > 0.45 && avg > 0.4) {
+  if (range < 0.2 && integration > 0.4) {
     return { key: 'archDessinateurComplet', descKey: 'descDessinateurComplet' };
   }
-  // Embryonic: very low across the board
-  if (avg < 0.3) {
+  // Embryonic: low V/C/P and low integration
+  if (avg < 0.35 && integration < 0.25) {
     return { key: 'archDonEmbryonnaire', descKey: 'descDonEmbryonnaire' };
   }
 
   const sorted = [V, C, P].sort((a, b) => b - a);
   const dominance = max > 0 ? (sorted[0] - sorted[1]) / max : 0;
 
-  if (dominance > 0.25) {
+  if (dominance > 0.2) {
     if (V === max) {
-      return dominance > 0.5
+      return dominance > 0.45
         ? { key: 'archPsychokineticien', descKey: 'descPsychokineticien' }
         : { key: 'archCommandeur', descKey: 'descCommandeur' };
     }
     if (C === max) {
-      return dominance > 0.45
+      return dominance > 0.4
         ? { key: 'archArtiste', descKey: 'descArtiste' }
         : { key: 'archReveur', descKey: 'descReveur' };
     }
     if (P === max) {
-      return dominance > 0.45
+      return dominance > 0.4
         ? { key: 'archCanal', descKey: 'descCanal' }
         : { key: 'archForceBrute', descKey: 'descForceBrute' };
     }
   }
 
-  if (integration < 0.35 && min / max < 0.45) {
+  if (integration < 0.3 && min / max < 0.5) {
     return { key: 'archDonFragmente', descKey: 'descDonFragmente' };
   }
-  if (min / max < 0.55 && integration < 0.45) {
+  if (min / max < 0.6 && integration < 0.4) {
     return { key: 'archGuerrier', descKey: 'descGuerrier' };
   }
 
@@ -187,5 +187,5 @@ export function findCharacterMatch(norm: NormalizedScores): CharacterMatch {
 export function isBlackCircle(norm: NormalizedScores): boolean {
   const { V, C, P, integration } = norm;
   const range = Math.max(V, C, P) - Math.min(V, C, P);
-  return range < 0.15 && integration > 0.85 && (V + C + P) / 3 > 0.6;
+  return range < 0.25 && integration > 0.85;
 }

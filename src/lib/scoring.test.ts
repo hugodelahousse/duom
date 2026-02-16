@@ -7,12 +7,12 @@ import type { Question } from './types';
 const CHARACTER_IDS = ['ewilan', 'silafian', 'edwin', 'sentinelles', 'bjorn', 'illian'] as const;
 
 const CHARACTERS = [
-  { id: 'ewilan',      V: 0.85, C: 0.85, P: 0.85, integration: 0.95 },
-  { id: 'silafian',    V: 0.9,  C: 0.2,  P: 0.5,  integration: 0.5  },
-  { id: 'edwin',       V: 0.65, C: 0.55, P: 0.5,  integration: 0.3  },
-  { id: 'sentinelles', V: 0.7,  C: 0.7,  P: 0.7,  integration: 0.85 },
-  { id: 'bjorn',       V: 0.2,  C: 0.25, P: 0.2,  integration: 0.15 },
-  { id: 'illian',      V: 0.9,  C: 0.15, P: 0.35, integration: 0.25 },
+  { id: 'ewilan',      V: 0.35, C: 0.55, P: 0.37, integration: 0.97 },
+  { id: 'silafian',    V: 0.85, C: 0.20, P: 0.30, integration: 0.10 },
+  { id: 'edwin',       V: 0.55, C: 0.40, P: 0.45, integration: 0.35 },
+  { id: 'sentinelles', V: 0.55, C: 0.47, P: 0.45, integration: 0.70 },
+  { id: 'bjorn',       V: 0.30, C: 0.35, P: 0.35, integration: 0.20 },
+  { id: 'illian',      V: 0.95, C: 0.12, P: 0.28, integration: 0.05 },
 ] as const;
 
 type Target = { V: number; C: number; P: number; integration: number };

@@ -23,7 +23,11 @@
       "Bash(npm uninstall:*)",
       "Bash(bun test:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx vite build:*)"
+      "Bash(npx vite build:*)",
+      "Bash(bun run:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
