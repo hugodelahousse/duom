@@ -60,7 +60,6 @@ html, body, #root {
   justify-content: center;
   z-index: 1;
   pointer-events: none;
-  transition: all 1s ease;
 }
 
 .circles-container {
@@ -68,8 +67,6 @@ html, body, #root {
   background: #f5f0e8;
   border-radius: 50%;
   isolation: isolate;
-  opacity: 0.06;
-  transition: opacity 1.5s ease;
   box-shadow:
     0 0 60px 30px rgba(245, 240, 232, 0.04),
     0 0 120px 60px rgba(245, 240, 232, 0.02);
@@ -425,9 +422,6 @@ html, body, #root {
 
     @media (max-width: 600px) { padding: 1vh 0; }
   }
-
-  .circles-container { opacity: 1; }
-  .circle { transition-duration: 2s; }
 
   .screen {
     position: relative;

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { motion, AnimatePresence, LayoutGroup } from "motion/react";
 import type {
   Lang,
   QuizMode,
@@ -16,7 +17,6 @@ import { parseShareHash } from "./lib/sharing";
 import { strings } from "./lib/i18n";
 import { LangContext } from "./lib/LangContext";
 import { Particles } from "./components/Particles";
-import { Circles } from "./components/Circles";
 import { Landing } from "./components/Landing";
 import { QuestionScreen } from "./components/QuestionScreen";
 import { ResultScreen } from "./components/ResultScreen";
@@ -31,14 +31,18 @@ function shuffleOptions(q: Question): Question {
   return { ...q, options };
 }
 
+const pageTransition = {
+  duration: 0.5,
+  ease: [0.4, 0, 0.2, 1] as const,
+};
+
 export function App() {
   const [shared] = useState(parseShareHash);
   const [lang, setLang] = useState<Lang>("fr");
   const [screen, setScreen] = useState<Screen>(shared ? "result" : "landing");
   const [mode, setMode] = useState<QuizMode>(shared?.mode ?? "rapide");
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
-  const [questionIndex, setQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const [finalAnswers, setFinalAnswers] = useState<number[]>([]);
   const [sharedScores] = useState<NormalizedScores | null>(
     shared?.scores ?? null,
   );
@@ -46,8 +50,8 @@ export function App() {
   const normalized: NormalizedScores = useMemo(
     () =>
       sharedScores ??
-      normalizeAnswers(selectedQuestions.slice(0, answers.length), answers),
-    [sharedScores, selectedQuestions, answers],
+      normalizeAnswers(selectedQuestions, finalAnswers),
+    [sharedScores, selectedQuestions, finalAnswers],
   );
 
   const containerSize = useContainerSize();
@@ -64,34 +68,21 @@ export function App() {
         ? selectRapideQuestions(questions)
         : selectCompleteQuestions(questions);
     setSelectedQuestions(qs.map(shuffleOptions));
-    setAnswers([]);
-    setQuestionIndex(0);
+    setFinalAnswers([]);
     setScreen("quiz");
   }, []);
 
-  const handleAnswer = useCallback(
-    (optionIndex: number) => {
-      setAnswers((prev) => [...prev, optionIndex]);
-
-      // Minimal delay — the exit animation is handled inside QuestionScreen
-      // before onAnswer is called, so we just need a brief gap for the
-      // enter animation to kick in with the new content
-      setTimeout(() => {
-        setQuestionIndex((prev) => {
-          if (prev + 1 >= selectedQuestions.length) {
-            setScreen("result");
-          }
-          return prev + 1;
-        });
-      }, 50);
+  const handleQuizComplete = useCallback(
+    (answers: number[]) => {
+      setFinalAnswers(answers);
+      setScreen("result");
     },
-    [selectedQuestions],
+    [],
   );
 
   const restart = useCallback(() => {
     setScreen("landing");
-    setAnswers([]);
-    setQuestionIndex(0);
+    setFinalAnswers([]);
     setSelectedQuestions([]);
     history.replaceState(null, "", window.location.pathname);
   }, []);
@@ -109,55 +100,65 @@ export function App() {
     [lang, toggleLang],
   );
 
-  const isResult = screen === "result";
-
   return (
     <LangContext value={langCtx}>
       <Particles />
-      {!isResult && (
-        <Circles
-          layout={layout}
-          screen={screen}
-          normalized={normalized}
-          containerSize={containerSize}
-          progress={
-            selectedQuestions.length > 0
-              ? answers.length / selectedQuestions.length
-              : 0
-          }
-        />
-      )}
-      {isResult ? (
-        <div className="result-page">
-          <div className="result-page__circles">
-            <Circles
-              layout={layout}
-              screen={screen}
-              normalized={normalized}
-              containerSize={containerSize}
-              progress={1}
-            />
-          </div>
-          <ResultScreen
-            mode={mode}
-            normalized={normalized}
-            onRestart={restart}
-          />
-        </div>
-      ) : (
-        <div className="app">
-          {screen === "landing" && <Landing onStart={startQuiz} />}
-          {screen === "quiz" && (
-            <QuestionScreen
-              key={questionIndex}
-              question={selectedQuestions[questionIndex]}
-              questionIndex={questionIndex}
-              totalQuestions={selectedQuestions.length}
-              onAnswer={handleAnswer}
-            />
+      <LayoutGroup>
+        <AnimatePresence mode="wait">
+          {screen === "landing" && (
+            <motion.div
+              key="landing"
+              className="app"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={pageTransition}
+            >
+              <Landing
+                onStart={startQuiz}
+                circlesLayout={layout}
+                normalized={normalized}
+                containerSize={containerSize}
+              />
+            </motion.div>
           )}
-        </div>
-      )}
+
+          {screen === "quiz" && (
+            <motion.div
+              key="quiz"
+              className="app"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={pageTransition}
+            >
+              <QuestionScreen
+                questions={selectedQuestions}
+                containerSize={containerSize}
+                onComplete={handleQuizComplete}
+              />
+            </motion.div>
+          )}
+
+          {screen === "result" && (
+            <motion.div
+              key="result"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={pageTransition}
+            >
+              <ResultScreen
+                mode={mode}
+                normalized={normalized}
+                onRestart={restart}
+                circlesLayout={layout}
+                containerSize={containerSize}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </LayoutGroup>
     </LangContext>
   );
 }

@@ -1,47 +1,62 @@
 import { use, useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import type { Question } from "../lib/types";
+import type { Question, NormalizedScores } from "../lib/types";
+import { normalizeAnswers, computeLayout } from "../lib/scoring";
 import { LangContext } from "../lib/LangContext";
+import { Circles } from "./Circles";
 
 interface QuestionScreenProps {
-  question: Question | undefined;
-  questionIndex: number;
-  totalQuestions: number;
-  onAnswer: (optionIndex: number) => void;
+  questions: Question[];
+  containerSize: number;
+  onComplete: (answers: number[]) => void;
 }
 
 export function QuestionScreen({
-  question,
-  questionIndex,
-  totalQuestions,
-  onAnswer,
+  questions,
+  containerSize,
+  onComplete,
 }: QuestionScreenProps) {
   const { lang } = use(LangContext);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<number[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
+
+  const totalQuestions = questions.length;
+  const progress = totalQuestions > 0 ? answers.length / totalQuestions : 0;
+
+  const normalized: NormalizedScores = useMemo(
+    () => normalizeAnswers(questions.slice(0, answers.length), answers),
+    [questions, answers],
+  );
+
+  const circlesLayout = useMemo(
+    () => computeLayout(normalized, containerSize),
+    [normalized, containerSize],
+  );
 
   const handleClick = useCallback(
     (index: number) => {
       if (selected !== null || animating) return;
       setSelected(index);
-      setTimeout(() => onAnswer(index), 250);
+
+      const newAnswers = [...answers, index];
+
+      setTimeout(() => {
+        setAnswers(newAnswers);
+        setSelected(null);
+
+        if (questionIndex + 1 >= totalQuestions) {
+          onComplete(newAnswers);
+        } else {
+          setQuestionIndex((prev) => prev + 1);
+        }
+      }, 250);
     },
-    [selected, animating, onAnswer],
+    [selected, animating, answers, questionIndex, totalQuestions, onComplete],
   );
 
-  const progressDots = useMemo(
-    () =>
-      Array.from({ length: totalQuestions }, (_, i) => (
-        <div
-          key={i}
-          className="progress-dot"
-          data-done={i < questionIndex ? "" : undefined}
-          aria-current={i === questionIndex ? "step" : undefined}
-        />
-      )),
-    [totalQuestions, questionIndex],
-  );
-
+  const question = questions[questionIndex];
   if (!question) return null;
 
   const isBinary = question.type === "binary";
@@ -49,6 +64,14 @@ export function QuestionScreen({
 
   return (
     <div className="screen">
+      <Circles
+        layout={circlesLayout}
+        screen="quiz"
+        normalized={normalized}
+        containerSize={containerSize}
+        progress={progress}
+      />
+
       {/* Progress */}
       <div className="progress">
         {useBar ? (
@@ -61,7 +84,14 @@ export function QuestionScreen({
             />
           </div>
         ) : (
-          progressDots
+          Array.from({ length: totalQuestions }, (_, i) => (
+            <div
+              key={i}
+              className="progress-dot"
+              data-done={i < questionIndex ? "" : undefined}
+              aria-current={i === questionIndex ? "step" : undefined}
+            />
+          ))
         )}
       </div>
 

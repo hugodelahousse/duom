@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { motion } from "motion/react";
 import type { ThreeCircleLayout, NormalizedScores, Screen } from "../lib/types";
 import { isBlackCircle } from "../lib/scoring";
 
@@ -9,6 +10,11 @@ interface CirclesProps {
   containerSize: number;
   progress?: number; // 0–1, fraction of questions answered
 }
+
+const layoutTransition = {
+  layout: { duration: 0.8, ease: [0.4, 0, 0.2, 1] as const },
+  opacity: { duration: 1.2, ease: "easeInOut" as const },
+};
 
 export function Circles({
   layout,
@@ -29,12 +35,25 @@ export function Circles({
   ], [layout]);
 
   return (
-    <div className="circles-viewport">
-      <div
+    <motion.div
+      className="circles-viewport"
+      layoutId="circles-viewport"
+      layout
+      transition={layoutTransition}
+    >
+      <motion.div
         className="circles-container"
+        layoutId="circles-container"
+        layout
+        {...(isResult
+          ? { animate: { opacity: 1 }, initial: { opacity: 0.06 } }
+          : {}
+        )}
+        transition={layoutTransition}
         style={{
           width: containerSize,
           height: containerSize,
+          ...(!isResult && { opacity: 0.06 }),
         }}
       >
         {circles.map(({ data, color, drift }) => (
@@ -56,7 +75,7 @@ export function Circles({
             }
           />
         ))}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
