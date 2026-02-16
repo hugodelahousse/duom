@@ -23,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "#e0ddd5" }}>
+        <div style={{ textAlign: "center", padding: "4rem 2rem", color: "var(--col-text)" }}>
           <h1 style={{ fontFamily: "'Cinzel', serif", marginBottom: "1rem" }}>
             Something went wrong
           </h1>
