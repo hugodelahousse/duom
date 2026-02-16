@@ -1,92 +1,61 @@
-import { useRef, useEffect } from 'react';
-import { animate } from 'motion';
-import type { ThreeCircleLayout, NormalizedScores, Screen } from '../lib/types';
-import { isBlackCircle } from '../lib/scoring';
+import { useMemo } from "react";
+import type { ThreeCircleLayout, NormalizedScores, Screen } from "../lib/types";
+import { isBlackCircle } from "../lib/scoring";
 
 interface CirclesProps {
   layout: ThreeCircleLayout;
   screen: Screen;
   normalized: NormalizedScores;
   containerSize: number;
+  progress?: number; // 0–1, fraction of questions answered
 }
 
-export function Circles({ layout, screen, normalized, containerSize }: CirclesProps) {
-  const redRef = useRef<HTMLDivElement>(null);
-  const blueRef = useRef<HTMLDivElement>(null);
-  const yellowRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Animate circles when layout changes (during quiz or result)
-  useEffect(() => {
-    if (screen !== 'quiz' && screen !== 'result') return;
-
-    const entries = [
-      { ref: redRef, data: layout.red },
-      { ref: blueRef, data: layout.blue },
-      { ref: yellowRef, data: layout.yellow },
-    ];
-
-    for (const { ref, data } of entries) {
-      if (!ref.current) continue;
-      const size = data.radius * 2;
-      animate(ref.current, {
-        width: `${size}px`,
-        height: `${size}px`,
-        x: data.x,
-        y: data.y,
-      } as Record<string, unknown>, {
-        duration: screen === 'result' ? 2 : 1.5,
-        ease: [0.4, 0, 0.2, 1] as const,
-      });
-    }
-  }, [layout, screen]);
-
-  // Container opacity: subtle during landing & quiz, full on result
-  useEffect(() => {
-    if (!containerRef.current) return;
-    containerRef.current.style.opacity = screen === 'result' ? '1' : '0.06';
-  }, [screen]);
-
-  // Reset circles when going back to landing
-  useEffect(() => {
-    if (screen === 'landing') {
-      const circles = [redRef, blueRef, yellowRef];
-      const colors = ['rgb(220, 50, 50)', 'rgb(50, 80, 200)', 'rgb(240, 200, 40)'];
-      circles.forEach((ref, i) => {
-        if (!ref.current) return;
-        ref.current.style.width = '120px';
-        ref.current.style.height = '120px';
-        ref.current.style.background = colors[i];
-        ref.current.style.opacity = '0.75';
-        ref.current.style.mixBlendMode = 'multiply';
-        ref.current.style.transform = 'translate(-50%, -50%)';
-      });
-    }
-  }, [screen]);
-
+export function Circles({
+  layout,
+  screen,
+  normalized,
+  containerSize,
+  progress = 0,
+}: CirclesProps) {
   const black = isBlackCircle(normalized);
-  const isDrifting = screen === 'landing';
-  const isResult = screen === 'result';
+  const isDrifting = screen === "landing";
+  const isResult = screen === "result";
+  const isActive = screen === "quiz" || isResult;
+
+  const circles = useMemo(() => [
+    { data: layout.red, color: "red" as const, drift: "1" },
+    { data: layout.blue, color: "blue" as const, drift: "2" },
+    { data: layout.yellow, color: "yellow" as const, drift: "3" },
+  ], [layout]);
 
   return (
-    <div className={`circles-viewport ${isResult ? 'circles-viewport--result' : ''}`}>
+    <div className="circles-viewport">
       <div
-        ref={containerRef}
         className="circles-container"
-        style={{ width: containerSize, height: containerSize }}
+        style={{
+          width: containerSize,
+          height: containerSize,
+        }}
       >
-        <div
-          ref={redRef}
-          className={`circle circle--red ${isDrifting ? 'circle--drift-1' : ''} ${black && screen === 'result' ? 'circle--to-black' : ''}`}
-        />
-        <div
-          ref={blueRef}
-          className={`circle circle--blue ${isDrifting ? 'circle--drift-2' : ''} ${black && screen === 'result' ? 'circle--to-black' : ''}`}
-        />
-        <div
-          ref={yellowRef}
-          className={`circle circle--yellow ${isDrifting ? 'circle--drift-3' : ''} ${black && screen === 'result' ? 'circle--to-black' : ''}`}
-        />
+        {circles.map(({ data, color, drift }) => (
+          <div
+            key={color}
+            className="circle"
+            data-color={color}
+            data-drift={isDrifting ? drift : undefined}
+            data-black={black && isResult ? "" : undefined}
+            style={
+              isActive
+                ? ({
+                    "--cx": `${data.x}px`,
+                    "--cy": `${data.y}px`,
+                    "--size": (data.radius * 2) / 120,
+                    opacity: screen === "quiz" ? progress / 2 : undefined,
+                  } as React.CSSProperties)
+                : undefined
+            }
+          />
+        ))}
       </div>
     </div>
   );

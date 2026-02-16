@@ -4,12 +4,24 @@ import type {
 } from './types';
 
 const CHARACTERS: CharacterProfile[] = [
+  // Profils Connus
   { id: 'ewilan', name: "Ewilan Gil'Sayan", V: 0.35, C: 0.55, P: 0.37, integration: 0.97, archKey: 'archDessinateurParfait', descKey: 'charEwilan' },
-  { id: 'silafian', name: "Empereur Sil'Afian", V: 0.85, C: 0.20, P: 0.30, integration: 0.10, archKey: 'archCommandeur', descKey: 'charSilAfian' },
+  { id: 'silafian', name: "Empereur Sil'Afian", V: 0.80, C: 0.22, P: 0.38, integration: 0.12, archKey: 'archCommandeur', descKey: 'charSilAfian' },
   { id: 'edwin', name: "Edwin Til'Illan", V: 0.55, C: 0.40, P: 0.45, integration: 0.35, archKey: 'archGuerrier', descKey: 'charEdwin' },
   { id: 'sentinelles', name: "Élicia & Altan Gil'Sayan", V: 0.55, C: 0.47, P: 0.45, integration: 0.70, archKey: 'archSentinelle', descKey: 'charSentinelles' },
   { id: 'bjorn', name: "Bjorn Wil'Wayard", V: 0.30, C: 0.35, P: 0.35, integration: 0.20, archKey: 'archDonEmbryonnaire', descKey: 'charBjorn' },
   { id: 'illian', name: 'Illian', V: 0.95, C: 0.12, P: 0.28, integration: 0.05, archKey: 'archPsychokineticien', descKey: 'charIllian' },
+  { id: 'merwyn', name: "Merwyn Ril'Avalon", V: 0.35, C: 0.55, P: 0.37, integration: 0.97, archKey: 'archDessinateurParfait', descKey: 'charMerwyn' },
+  // Profils Déduits
+  { id: 'duom', name: "Duom Nil'Erg", V: 0.40, C: 0.55, P: 0.30, integration: 0.45, archKey: 'archDessinateurComplet', descKey: 'charDuom' },
+  { id: 'mathieu', name: "Mathieu Gil'Sayan", V: 0.15, C: 0.50, P: 0.15, integration: 0.35, archKey: 'archReveur', descKey: 'charMathieu' },
+  { id: 'liven', name: "Liven Dil'Ventin", V: 0.50, C: 0.60, P: 0.48, integration: 0.65, archKey: 'archSentinelle', descKey: 'charLiven' },
+  { id: 'elea', name: "Éléa Ril'Morienval", V: 0.70, C: 0.50, P: 0.48, integration: 0.60, archKey: 'archCommandeur', descKey: 'charElea' },
+  // Cas Limites
+  { id: 'ellana', name: 'Ellana Caldin', V: 0.70, C: 0.55, P: 0.30, integration: 0.05, archKey: 'archDonFragmente', descKey: 'charEllana' },
+  { id: 'salim', name: 'Salim', V: 0.55, C: 0.30, P: 0.22, integration: 0.08, archKey: 'archDonFragmente', descKey: 'charSalim' },
+  { id: 'siam', name: "Siam Til'Illan", V: 0.70, C: 0.35, P: 0.30, integration: 0.05, archKey: 'archGuerrier', descKey: 'charSiam' },
+  { id: 'maniel', name: 'Maniel', V: 0.80, C: 0.10, P: 0.50, integration: 0.03, archKey: 'archForceBrute', descKey: 'charManiel' },
 ];
 
 function clamp(val: number, min: number, max: number): number {
@@ -179,8 +191,8 @@ export function findCharacterMatch(norm: NormalizedScores): CharacterMatch {
 
   const maxDist = 2;
   return {
-    primary: { ...bestChar, similarity: Math.round((1 - bestDist / maxDist) * 100) },
-    secondary: { ...secondChar, similarity: Math.round((1 - secondDist / maxDist) * 100) },
+    primary: { ...bestChar, similarity: Math.max(0, Math.round((1 - bestDist / maxDist) * 100)) },
+    secondary: { ...secondChar, similarity: Math.max(0, Math.round((1 - secondDist / maxDist) * 100)) },
   };
 }
 

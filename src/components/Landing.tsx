@@ -1,38 +1,39 @@
-import type { Lang, QuizMode } from '../lib/types';
-import { t } from '../lib/i18n';
+import { use } from 'react';
+import type { QuizMode } from '../lib/types';
+import { LangContext } from '../lib/LangContext';
 
 interface LandingProps {
-  lang: Lang;
   onStart: (mode: QuizMode) => void;
-  onToggleLang: () => void;
 }
 
-export function Landing({ lang, onStart, onToggleLang }: LandingProps) {
+export function Landing({ onStart }: LandingProps) {
+  const { lang, t, toggleLang } = use(LangContext);
+
   return (
-    <div className="screen screen--landing">
+    <div className="screen">
       <button
         className="lang-toggle"
-        onClick={onToggleLang}
+        onClick={toggleLang}
         aria-label="Switch language"
       >
         {lang === 'fr' ? 'EN' : 'FR'}
       </button>
 
       <div className="landing-content">
-        <h1 className="landing-title">{t('title', lang)}</h1>
-        <p className="landing-subtitle">{t('subtitle', lang)}</p>
+        <h1 className="landing-title">{t('title')}</h1>
+        <p className="landing-subtitle">{t('subtitle')}</p>
 
         <blockquote className="landing-quote">
-          <p>{t('quote', lang)}</p>
-          <cite>{t('quoteAuthor', lang)}</cite>
+          <p>{t('quote')}</p>
+          <cite>{t('quoteAuthor')}</cite>
         </blockquote>
 
         <div className="landing-buttons">
-          <button className="btn btn--primary" onClick={() => onStart('rapide')}>
-            {t('btnRapide', lang)}
+          <button className="btn" data-variant="primary" onClick={() => onStart('rapide')}>
+            {t('btnRapide')}
           </button>
-          <button className="btn btn--secondary" onClick={() => onStart('complete')}>
-            {t('btnComplete', lang)}
+          <button className="btn" onClick={() => onStart('complete')}>
+            {t('btnComplete')}
           </button>
         </div>
       </div>

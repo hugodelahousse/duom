@@ -1,6 +1,6 @@
 import type { Lang } from './types';
 
-const strings: Record<Lang, Record<string, string>> = {
+export const strings: Record<Lang, Record<string, string>> = {
   fr: {
     title: "L'Épreuve des Trois Cercles",
     subtitle: "Découvrez votre profil de dessinateur",
@@ -50,6 +50,15 @@ const strings: Record<Lang, Record<string, string>> = {
     charSentinelles: "Des dessinateurs d'élite. Leur équilibre et leur puissance en faisaient des Sentinelles naturelles.",
     charBjorn: "Un homme sans don véritable. Sa Volonté féroce sur le champ de bataille ne trouve aucun écho dans les Spires.",
     charIllian: "Un pouvoir dévoyé. Il ne dessine pas — il ordonne. Son passage dans l'Imagination est une violation plutôt qu'une exploration.",
+    charMerwyn: "Le plus grand dessinateur de tous les temps. Un cercle noir, comme celui d'Ewilan — le seul autre cas connu dans toute l'histoire de Gwendalavir.",
+    charDuom: "Un analyste, pas un combattant. Sa Créativité fait de lui un lecteur de profils exceptionnel. Ses dessins sont sobres mais nets.",
+    charMathieu: "Un don étroit et inclassable. Son pouvoir est confiné mais saisissant — il échappe à ce que le scintilleur mesure.",
+    charLiven: "Un inventeur et un virtuose. Sa Créativité le distingue : il a inventé la desmose, un concept entièrement nouveau.",
+    charElea: "Une Sentinelle dévorée par l'ambition. Sa Volonté dévore tout — la détermination a basculé vers la tyrannie.",
+    charEllana: "Une marchombre, pas une dessinatrice. Ses forces sont réelles mais totalement déconnectées — trois îlots séparés sur le velours blanc.",
+    charSalim: "Il ne possède pas le Don du Dessin. Ses cercles sont dispersés, perturbés par une anomalie sombre sans rapport avec les trois forces.",
+    charSiam: "Une Frontalière dont la lame est son pouvoir. Un profil qui rappelle celui de son frère Edwin, mais avec une intégration encore pire.",
+    charManiel: "Une Volonté brute et écrasante, un Pouvoir respectable, une Créativité inexistante. Ses forces alimentent ses muscles, pas les Spires.",
   },
   en: {
     title: "The Trial of Three Circles",
@@ -100,9 +109,14 @@ const strings: Record<Lang, Record<string, string>> = {
     charSentinelles: "Elite Drawers. Their balance and power made them natural Sentinels.",
     charBjorn: "A man without a true gift. His fierce battlefield Will finds no echo in the Spires.",
     charIllian: "A perverted power. He doesn't draw — he commands. His passage through the Imagination is a violation rather than an exploration.",
+    charMerwyn: "The greatest Drawer of all time. A black circle, like Ewilan's — the only other known case in the entire history of Gwendalavir.",
+    charDuom: "An analyst, not a fighter. His Creativity makes him an exceptional profile reader. His drawings are sober but precise.",
+    charMathieu: "A narrow and unclassifiable gift. His power is confined but striking — it escapes what the sparkler measures.",
+    charLiven: "An inventor and a virtuoso. His Creativity sets him apart: he invented desmosis, an entirely new concept.",
+    charElea: "A Sentinel consumed by ambition. Her Will devours everything — determination has tipped into tyranny.",
+    charEllana: "A Shadowalker, not a Drawer. Her forces are real but completely disconnected — three separate islands on the white velvet.",
+    charSalim: "He does not possess the Gift of Drawing. His circles are scattered, disturbed by a dark anomaly unrelated to the three forces.",
+    charSiam: "A Frontier guard whose blade is her power. A profile reminiscent of her brother Edwin's, but with even worse integration.",
+    charManiel: "A crushing brute Will, respectable Power, nonexistent Creativity. His forces fuel his muscles, not the Spires.",
   },
 };
-
-export function t(key: string, lang: Lang): string {
-  return strings[lang]?.[key] ?? strings.fr[key] ?? key;
-}

@@ -1,116 +1,105 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { Lang, Question } from '../lib/types';
+import { use, useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import type { Question } from "../lib/types";
+import { LangContext } from "../lib/LangContext";
 
 interface QuestionScreenProps {
-  lang: Lang;
   question: Question | undefined;
   questionIndex: number;
   totalQuestions: number;
   onAnswer: (optionIndex: number) => void;
 }
 
-/** A snapshot of a question card — we keep the outgoing one around for crossfade */
-interface CardSnapshot {
-  question: Question;
-  index: number;
-  key: number;
-}
-
-let cardKeyCounter = 0;
-
-export function QuestionScreen({ lang, question, questionIndex, totalQuestions, onAnswer }: QuestionScreenProps) {
+export function QuestionScreen({
+  question,
+  questionIndex,
+  totalQuestions,
+  onAnswer,
+}: QuestionScreenProps) {
+  const { lang } = use(LangContext);
   const [selected, setSelected] = useState<number | null>(null);
-  const [transitioning, setTransitioning] = useState(false);
+  const [animating, setAnimating] = useState(false);
 
-  // Stack of cards: the last one is current, any earlier ones are exiting
-  const [cards, setCards] = useState<CardSnapshot[]>(() =>
-    question ? [{ question, index: questionIndex, key: cardKeyCounter++ }] : [],
+  const handleClick = useCallback(
+    (index: number) => {
+      if (selected !== null || animating) return;
+      setSelected(index);
+      setTimeout(() => onAnswer(index), 250);
+    },
+    [selected, animating, onAnswer],
   );
 
-  // When questionIndex changes, push a new card onto the stack
-  useEffect(() => {
-    if (!question) return;
-    setCards(prev => {
-      // Avoid duplicate if already the current question
-      if (prev.length > 0 && prev[prev.length - 1].index === questionIndex) return prev;
-      return [...prev, { question, index: questionIndex, key: cardKeyCounter++ }];
-    });
-    setSelected(null);
-    setTransitioning(true);
-  }, [questionIndex, question]);
+  const progressDots = useMemo(
+    () =>
+      Array.from({ length: totalQuestions }, (_, i) => (
+        <div
+          key={i}
+          className="progress-dot"
+          data-done={i < questionIndex ? "" : undefined}
+          aria-current={i === questionIndex ? "step" : undefined}
+        />
+      )),
+    [totalQuestions, questionIndex],
+  );
 
-  // After crossfade completes, remove old cards from the stack
-  useEffect(() => {
-    if (!transitioning) return;
-    const timer = setTimeout(() => {
-      setCards(prev => prev.length > 1 ? [prev[prev.length - 1]] : prev);
-      setTransitioning(false);
-    }, 320);
-    return () => clearTimeout(timer);
-  }, [transitioning]);
+  if (!question) return null;
 
-  const handleClick = useCallback((i: number) => {
-    if (selected !== null || transitioning) return;
-    setSelected(i);
-    setTimeout(() => onAnswer(i), 250);
-  }, [selected, transitioning, onAnswer]);
-
+  const isBinary = question.type === "binary";
   const useBar = totalQuestions > 20;
-  const currentCard = cards[cards.length - 1];
-  if (!currentCard) return null;
 
   return (
-    <div className="screen screen--question">
+    <div className="screen">
       {/* Progress */}
       <div className="progress">
         {useBar ? (
           <div className="progress-bar-track">
             <div
               className="progress-bar-fill"
-              style={{ width: `${((currentCard.index + 1) / totalQuestions) * 100}%` }}
+              style={{
+                width: `${((questionIndex + 1) / totalQuestions) * 100}%`,
+              }}
             />
           </div>
         ) : (
-          Array.from({ length: totalQuestions }, (_, i) => (
-            <div
-              key={i}
-              className={`progress-dot ${
-                i < currentCard.index ? 'progress-dot--done' :
-                i === currentCard.index ? 'progress-dot--current' : ''
-              }`}
-            />
-          ))
+          progressDots
         )}
       </div>
 
-      {/* Card stack — old cards fade out, new card fades in simultaneously */}
+      {/* Card — AnimatePresence waits for exit before entering */}
       <div className="question-card-anchor">
-        {cards.map((card, stackIndex) => {
-          const isCurrent = stackIndex === cards.length - 1;
-          const isExiting = !isCurrent;
-          const isBinary = card.question.type === 'binary';
-
-          return (
+        <AnimatePresence mode="wait" onExitComplete={() => setAnimating(false)}>
+          <motion.div
+            key={questionIndex}
+            className="question-card"
+            initial={{ opacity: 0, y: 10, filter: "blur(3px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -8, filter: "blur(3px)" }}
+            transition={{
+              duration: 0.3,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            onAnimationStart={() => setAnimating(true)}
+            onAnimationComplete={() => setAnimating(false)}
+          >
+            <p className="question-text">{question.text[lang]}</p>
             <div
-              key={card.key}
-              className={`question-card ${isExiting ? 'question-card--exit' : ''}`}
+              className="question-options"
+              data-binary={isBinary ? "" : undefined}
             >
-              <p className="question-text">{card.question.text[lang]}</p>
-              <div className={`question-options ${isBinary ? 'question-options--binary' : ''}`}>
-                {card.question.options.map((opt, i) => (
-                  <button
-                    key={i}
-                    className={`option-btn ${isCurrent && selected === i ? 'option-btn--selected' : ''}`}
-                    onClick={() => isCurrent && handleClick(i)}
-                    disabled={!isCurrent || selected !== null || transitioning}
-                  >
-                    {opt.text[lang]}
-                  </button>
-                ))}
-              </div>
+              {question.options.map((opt, i) => (
+                <button
+                  key={i}
+                  className="option-btn"
+                  aria-pressed={selected === i ? true : undefined}
+                  onClick={() => handleClick(i)}
+                  disabled={selected !== null || animating}
+                >
+                  {opt.text[lang]}
+                </button>
+              ))}
             </div>
-          );
-        })}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

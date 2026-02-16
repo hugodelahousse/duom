@@ -1,9 +1,9 @@
-import { useMemo } from 'react';
+import { useState } from 'react';
 
 const PARTICLE_COUNT = 70;
 
 export function Particles() {
-  const particles = useMemo(() =>
+  const [particles] = useState(() =>
     Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
@@ -14,7 +14,6 @@ export function Particles() {
       delay: `-${Math.random() * 20}s`,
       opacity: 0.15 + Math.random() * 0.35,
     })),
-    [],
   );
 
   return (

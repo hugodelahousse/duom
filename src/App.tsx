@@ -1,26 +1,53 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import type { Lang, QuizMode, Screen, NormalizedScores, Question } from './lib/types';
-import { questions } from './lib/questions';
-import { normalizeAnswers, computeLayout } from './lib/scoring';
-import { selectRapideQuestions, selectCompleteQuestions } from './lib/questionSelection';
-import { parseShareHash } from './lib/sharing';
-import { Particles } from './components/Particles';
-import { Circles } from './components/Circles';
-import { Landing } from './components/Landing';
-import { QuestionScreen } from './components/QuestionScreen';
-import { ResultScreen } from './components/ResultScreen';
+import { useState, useCallback, useEffect, useMemo } from "react";
+import type {
+  Lang,
+  QuizMode,
+  Screen,
+  NormalizedScores,
+  Question,
+} from "./lib/types";
+import { questions } from "./lib/questions";
+import { normalizeAnswers, computeLayout } from "./lib/scoring";
+import {
+  selectRapideQuestions,
+  selectCompleteQuestions,
+} from "./lib/questionSelection";
+import { parseShareHash } from "./lib/sharing";
+import { strings } from "./lib/i18n";
+import { LangContext } from "./lib/LangContext";
+import { Particles } from "./components/Particles";
+import { Circles } from "./components/Circles";
+import { Landing } from "./components/Landing";
+import { QuestionScreen } from "./components/QuestionScreen";
+import { ResultScreen } from "./components/ResultScreen";
+
+/** Return a copy of the question with its options in Fisher-Yates–shuffled order */
+function shuffleOptions(q: Question): Question {
+  const options = [...q.options];
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  return { ...q, options };
+}
 
 export function App() {
-  const [lang, setLang] = useState<Lang>('fr');
-  const [screen, setScreen] = useState<Screen>('landing');
-  const [mode, setMode] = useState<QuizMode>('rapide');
+  const [shared] = useState(parseShareHash);
+  const [lang, setLang] = useState<Lang>("fr");
+  const [screen, setScreen] = useState<Screen>(shared ? "result" : "landing");
+  const [mode, setMode] = useState<QuizMode>(shared?.mode ?? "rapide");
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
+  const [sharedScores] = useState<NormalizedScores | null>(
+    shared?.scores ?? null,
+  );
 
   const normalized: NormalizedScores = useMemo(
-    () => normalizeAnswers(selectedQuestions.slice(0, answers.length), answers),
-    [selectedQuestions, answers],
+    () =>
+      sharedScores ??
+      normalizeAnswers(selectedQuestions.slice(0, answers.length), answers),
+    [sharedScores, selectedQuestions, answers],
   );
 
   const containerSize = useContainerSize();
@@ -30,87 +57,62 @@ export function App() {
     [normalized, containerSize],
   );
 
-  // Handle shared URL on mount
-  useEffect(() => {
-    const shared = parseShareHash();
-    if (!shared) return;
-
-    setLang(shared.lang);
-    const qs = shared.mode === 'rapide' && shared.selectedIds
-      ? shared.selectedIds.map(id => questions.find(q => q.id === id)).filter(Boolean) as Question[]
-      : [...questions];
-
-    setMode(shared.mode);
-    setSelectedQuestions(qs);
-
-    const replayAnswers: number[] = [];
-    for (let i = 0; i < shared.answers.length && i < qs.length; i++) {
-      const optIndex = shared.answers[i];
-      if (qs[i]?.options[optIndex]) {
-        replayAnswers.push(optIndex);
-      }
-    }
-    setAnswers(replayAnswers);
-    setQuestionIndex(qs.length);
-    setScreen('result');
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const startQuiz = useCallback((selectedMode: QuizMode) => {
     setMode(selectedMode);
-    const qs = selectedMode === 'rapide'
-      ? selectRapideQuestions(questions)
-      : selectCompleteQuestions(questions);
-    setSelectedQuestions(qs);
+    const qs =
+      selectedMode === "rapide"
+        ? selectRapideQuestions(questions)
+        : selectCompleteQuestions(questions);
+    setSelectedQuestions(qs.map(shuffleOptions));
     setAnswers([]);
     setQuestionIndex(0);
-    setScreen('quiz');
+    setScreen("quiz");
   }, []);
 
-  const handleAnswer = useCallback((optionIndex: number) => {
-    const q = selectedQuestions[questionIndex];
-    if (!q) return;
+  const handleAnswer = useCallback(
+    (optionIndex: number) => {
+      setAnswers((prev) => [...prev, optionIndex]);
 
-    setAnswers(prev => [...prev, optionIndex]);
-
-    // Minimal delay — the exit animation is handled inside QuestionScreen
-    // before onAnswer is called, so we just need a brief gap for the
-    // enter animation to kick in with the new content
-    setTimeout(() => {
-      if (questionIndex + 1 >= selectedQuestions.length) {
-        setQuestionIndex(prev => prev + 1);
-        setScreen('result');
-      } else {
-        setQuestionIndex(prev => prev + 1);
-      }
-    }, 50);
-  }, [selectedQuestions, questionIndex]);
+      // Minimal delay — the exit animation is handled inside QuestionScreen
+      // before onAnswer is called, so we just need a brief gap for the
+      // enter animation to kick in with the new content
+      setTimeout(() => {
+        setQuestionIndex((prev) => {
+          if (prev + 1 >= selectedQuestions.length) {
+            setScreen("result");
+          }
+          return prev + 1;
+        });
+      }, 50);
+    },
+    [selectedQuestions],
+  );
 
   const restart = useCallback(() => {
-    setScreen('landing');
+    setScreen("landing");
     setAnswers([]);
     setQuestionIndex(0);
     setSelectedQuestions([]);
-    history.replaceState(null, '', window.location.pathname);
+    history.replaceState(null, "", window.location.pathname);
   }, []);
 
   const toggleLang = useCallback(() => {
-    setLang(prev => prev === 'fr' ? 'en' : 'fr');
+    setLang((prev) => (prev === "fr" ? "en" : "fr"));
   }, []);
 
-  // Toggle body scroll for result screen
-  useEffect(() => {
-    if (screen === 'result') {
-      document.documentElement.classList.add('is-result');
-    } else {
-      document.documentElement.classList.remove('is-result');
-      window.scrollTo(0, 0);
-    }
-  }, [screen]);
+  const langCtx = useMemo(
+    () => ({
+      lang,
+      t: (key: string) => strings[lang]?.[key] ?? strings.fr[key] ?? key,
+      toggleLang,
+    }),
+    [lang, toggleLang],
+  );
 
-  const isResult = screen === 'result';
+  const isResult = screen === "result";
 
   return (
-    <>
+    <LangContext value={langCtx}>
       <Particles />
       {!isResult && (
         <Circles
@@ -118,6 +120,11 @@ export function App() {
           screen={screen}
           normalized={normalized}
           containerSize={containerSize}
+          progress={
+            selectedQuestions.length > 0
+              ? answers.length / selectedQuestions.length
+              : 0
+          }
         />
       )}
       {isResult ? (
@@ -128,29 +135,21 @@ export function App() {
               screen={screen}
               normalized={normalized}
               containerSize={containerSize}
+              progress={1}
             />
           </div>
           <ResultScreen
-            lang={lang}
             mode={mode}
             normalized={normalized}
-            selectedQuestions={selectedQuestions}
-            answers={answers}
             onRestart={restart}
           />
         </div>
       ) : (
         <div className="app">
-          {screen === 'landing' && (
-            <Landing
-              lang={lang}
-              onStart={startQuiz}
-              onToggleLang={toggleLang}
-            />
-          )}
-          {screen === 'quiz' && (
+          {screen === "landing" && <Landing onStart={startQuiz} />}
+          {screen === "quiz" && (
             <QuestionScreen
-              lang={lang}
+              key={questionIndex}
               question={selectedQuestions[questionIndex]}
               questionIndex={questionIndex}
               totalQuestions={selectedQuestions.length}
@@ -159,7 +158,7 @@ export function App() {
           )}
         </div>
       )}
-    </>
+    </LangContext>
   );
 }
 
@@ -174,8 +173,8 @@ function useContainerSize(): number {
       const s = Math.min(window.innerWidth, window.innerHeight);
       setSize(s < 600 ? (s < 400 ? 260 : 320) : 500);
     };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   return size;

@@ -1,22 +1,25 @@
-import { useState, useEffect, useRef } from 'react';
-import type { Lang, QuizMode, NormalizedScores, Question } from '../lib/types';
-import { t } from '../lib/i18n';
-import { determineArchetype, findCharacterMatch, isBlackCircle } from '../lib/scoring';
-import { buildShareHash } from '../lib/sharing';
+import { use, useState, useEffect, useRef } from "react";
+import type { QuizMode, NormalizedScores } from "../lib/types";
+import { LangContext } from "../lib/LangContext";
+import {
+  determineArchetype,
+  findCharacterMatch,
+  isBlackCircle,
+} from "../lib/scoring";
+import { buildShareHash } from "../lib/sharing";
 
 interface ResultScreenProps {
-  lang: Lang;
   mode: QuizMode;
   normalized: NormalizedScores;
-  selectedQuestions: Question[];
-  answers: number[];
   onRestart: () => void;
 }
 
-type Phase = 'concentrating' | 'flash' | 'reveal' | 'done';
-
-export function ResultScreen({ lang, mode, normalized, selectedQuestions, answers, onRestart }: ResultScreenProps) {
-  const [phase, setPhase] = useState<Phase>('concentrating');
+export function ResultScreen({
+  mode,
+  normalized,
+  onRestart,
+}: ResultScreenProps) {
+  const { t } = use(LangContext);
   const [barsAnimated, setBarsAnimated] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -25,70 +28,70 @@ export function ResultScreen({ lang, mode, normalized, selectedQuestions, answer
   const match = findCharacterMatch(normalized);
   const black = isBlackCircle(normalized);
 
+  // Kick off bar animation shortly after mount
   useEffect(() => {
-    // Phase sequence
-    timerRef.current = setTimeout(() => setPhase('flash'), 2000);
+    timerRef.current = setTimeout(() => setBarsAnimated(true), 600);
     return () => clearTimeout(timerRef.current);
   }, []);
 
-  useEffect(() => {
-    if (phase === 'flash') {
-      timerRef.current = setTimeout(() => setPhase('reveal'), 600);
-      return () => clearTimeout(timerRef.current);
-    }
-    if (phase === 'reveal') {
-      timerRef.current = setTimeout(() => {
-        setPhase('done');
-        setTimeout(() => setBarsAnimated(true), 200);
-      }, 1500);
-      return () => clearTimeout(timerRef.current);
-    }
-  }, [phase]);
-
   const handleShare = () => {
-    const hash = buildShareHash(lang, mode, answers, selectedQuestions);
+    const hash = buildShareHash(mode, normalized);
     const url = `${window.location.origin}${window.location.pathname}#${hash}`;
-    navigator.clipboard.writeText(url).then(() => {
-      setToastVisible(true);
-      setTimeout(() => setToastVisible(false), 2500);
-    }).catch(() => {
-      prompt(t('shareCopied', lang), url);
-    });
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 2500);
+      })
+      .catch(() => {
+        // Fallback: select the URL in a temporary textarea so the user can copy manually
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        setToastVisible(true);
+        setTimeout(() => setToastVisible(false), 2500);
+      });
   };
 
   return (
-    <div className="screen screen--result">
-      {/* Concentrating overlay */}
-      <div className={`result-overlay ${phase === 'concentrating' ? 'result-overlay--visible' : ''}`}>
-        <p className="result-concentrating">{t('concentrating', lang)}</p>
-      </div>
-
-      {/* Flash */}
-      <div className={`flash-overlay ${phase === 'flash' ? 'flash-overlay--visible' : ''}`} />
-
-      {/* Results panel */}
-      <div className={`result-panel ${phase === 'done' ? 'result-panel--visible' : ''}`}>
-        <h2 className="result-archetype">{t(archetype.key, lang)}</h2>
+    <div className="screen">
+      {/* Results panel — fades in via CSS @starting-style on .result-panel */}
+      <div className="result-panel">
+        <h2 className="result-archetype">{t(archetype.key)}</h2>
         <p className="result-description">
-          {black ? t('impossible', lang) : t(archetype.descKey, lang)}
+          {black ? t("impossible") : t(archetype.descKey)}
         </p>
 
         {/* Score bars */}
         <div className="result-bars">
           {[
-            { label: t('volonte', lang), value: normalized.V, cssClass: 'red' },
-            { label: t('creativite', lang), value: normalized.C, cssClass: 'blue' },
-            { label: t('pouvoir', lang), value: normalized.P, cssClass: 'yellow' },
-            { label: t('integration', lang), value: normalized.integration, cssClass: 'integration' },
+            { label: t("volonte"), value: normalized.V, color: "red" },
+            {
+              label: t("creativite"),
+              value: normalized.C,
+              color: "blue",
+            },
+            { label: t("pouvoir"), value: normalized.P, color: "yellow" },
+            {
+              label: t("integration"),
+              value: normalized.integration,
+              color: "integration",
+            },
           ].map((bar) => {
             const pct = Math.round(bar.value * 100);
             return (
-              <div key={bar.cssClass} className="result-bar">
+              <div key={bar.color} className="result-bar">
                 <span className="result-bar__label">{bar.label}</span>
                 <div className="result-bar__track">
                   <div
-                    className={`result-bar__fill result-bar__fill--${bar.cssClass}`}
-                    style={{ width: barsAnimated ? `${pct}%` : '0%' }}
+                    className="result-bar__fill"
+                    data-color={bar.color}
+                    style={{ width: barsAnimated ? `${pct}%` : "0%" }}
                   />
                 </div>
                 <span className="result-bar__value">{pct}%</span>
@@ -99,27 +102,32 @@ export function ResultScreen({ lang, mode, normalized, selectedQuestions, answer
 
         {/* Character match */}
         <div className="result-match">
-          <p className="result-match__label">{t('matchLabel', lang)}</p>
+          <p className="result-match__label">{t("matchLabel")}</p>
           <p className="result-match__name">
             {match.primary.name} ({match.primary.similarity}%)
           </p>
-          <p className="result-match__desc">{t(match.primary.descKey, lang)}</p>
+          <p className="result-match__desc">{t(match.primary.descKey)}</p>
         </div>
 
         {/* Buttons */}
         <div className="result-buttons">
-          <button className="btn btn--primary" onClick={onRestart}>
-            {t('btnRestart', lang)}
+          <button className="btn" data-variant="primary" onClick={onRestart}>
+            {t("btnRestart")}
           </button>
-          <button className="btn btn--secondary" onClick={handleShare}>
-            {t('btnShare', lang)}
+          <button className="btn" onClick={handleShare}>
+            {t("btnShare")}
           </button>
         </div>
       </div>
 
       {/* Toast */}
-      <div className={`share-toast ${toastVisible ? 'share-toast--visible' : ''}`}>
-        {t('shareCopied', lang)}
+      <div
+        className="share-toast"
+        role="status"
+        aria-live="polite"
+        data-visible={toastVisible ? "" : undefined}
+      >
+        {t("shareCopied")}
       </div>
     </div>
   );

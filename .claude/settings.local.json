@@ -27,7 +27,14 @@
       "Bash(bun run:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(bun -e:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:blog.logrocket.com)",
+      "Bash(npm run build:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }
